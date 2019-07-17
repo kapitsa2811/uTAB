@@ -52,11 +52,12 @@ this code is modified for new segmentaion
     0) dont change older path
 path="/home/kapitsa/pyCharm/segmentation/Convolutional-Encoder-Decoder-for-Hand-Segmentation-master/paper//"
 '''
-pathOld="/home/kapitsa/pyCharm/segmentation/Convolutional-Encoder-Decoder-for-Hand-Segmentation-master/paper//"
+pathOld=".//publicationData//"
 '''
     1)publication experiment path
 '''
-path="/home/kapitsa/pyCharm/segmentation/Convolutional-Encoder-Decoder-for-Hand-Segmentation-master/paper//publicationData//"
+#path="/home/kapitsa/pyCharm/segmentation/Convolutional-Encoder-Decoder-for-Hand-Segmentation-master/paper//publicationData//"
+path=".//publicationData//"
 expN0=8
 #pathOld=path+str(expN0)+"//imageWord//"
 
@@ -74,7 +75,9 @@ path_y = path+'/segment2/'
     2) EXPERIMENTS FOR PAPER
 '''
 #path_x = path+str(expN0)+'//train/imageWord/' #only hands
-path_x = path+str(expN0)+'//train/blocks/' #only hands
+path_x = path+str(expN0)+'//train/blocks/' #
+path_x1 = path+str(expN0)+'//train/contourBlocks/' #
+
 path_y = path+str(expN0)+'//train/segWord/' #segmented data
 #path_y = path+str(expN0)+'//train/segWord/' #segmented data
 '''
@@ -99,6 +102,7 @@ noException=0
 blackOnWhite=0
 bothBlackAndWhite=0 # considers black and white images by inverting
 unableKernel=0
+unableContourMaps=1
 
 insize=256
 X_train=np.zeros((maxImageProcess,insize,insize,3))
@@ -109,21 +113,49 @@ y_train=np.zeros((maxImageProcess,insize,insize,3))
 for indxImg,img in enumerate(sorted(dump)):
 
     if indxImg %100==0:
-        print "\n\tindxImg=",indxImg,"\t dumpLen=",dumpLen
+        print ("\n\tindxImg=",indxImg,"\t dumpLen=",dumpLen)
     if indxImg>=maxImageProcess:
             break
     try:
         originalIm = cv2.imread(path_x+img)
-
+        originalIm1 = cv2.imread(path_x1+img)
         row,col,ch=originalIm.shape
 
-        #print(originalIm.shape)
+        # print(originalIm.shape)
+        # print(originalIm1.shape)
+
 
         if unableKernel==1:
             for i in range(row):
                 for j in range(col):
                     originalIm[i,j,1]=(i*1.0/col*1.0)*1.0
                     originalIm[i, j, 2] = (j*1.0/row*1.0)*1.0
+
+
+        if unableContourMaps==1:
+            delMeTemp=originalIm1[:,:,0]
+
+            #print("\n\t shape=",delMeTemp.shape)
+
+            originalIm[:,:,1]=0.3*delMeTemp
+            #originalIm = cv2.addWeighted(originalIm, 0.7, originalIm1, 0.3, 0)
+
+            #for i in range(row):
+                # for j in range(col):
+                #     originalIm[i,j,0]=delMeTemp[i,j]
+                #     #originalIm[i, j, 0] = (j*1.0/row*1.0)*1.0
+                #
+
+            #cv2.imwrite("/home/kapitsa/PycharmProjects/objectLocalization/DocumentTableSeg/DCEDN/publicationData/8/train//delMe//"+img,originalIm)
+
+            # plt.imshow("fusinImage",originalIm)
+            # plt.waitforbuttonpress()
+            '''
+            for i in range(row):
+                for j in range(col):
+                    originalIm[i,j,1]=(i*1.0/col*1.0)*1.0
+                    originalIm[i, j, 2] = (j*1.0/row*1.0)*1.0
+                '''
 
         #originalIm = cv2.cvtColor(originalIm, cv2.COLOR_BGR2GRAY)
         #originalIm=np.expand_dims(originalIm,0)
@@ -158,33 +190,48 @@ for indxImg,img in enumerate(sorted(dump)):
 
     except Exception as e:
         noException+=1
-        print "\n\t e=",e
+        print ("\n\t e=",e)
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 
-        print("\n\t segmentedIm size=",segmentedIm.shape)
+        #print("\n\t segmentedIm size=",segmentedIm.shape)
         print("\n\t line no", exc_tb.tb_lineno)
         #input("check exception")
 
 
-print "\n\t noException=",noException
+print ("\n\t noException=",noException)
+
+
 
 # X_train=X_train.reshape([-1,insize, insize,3])
 # y_train=y_train.reshape([-1,insize, insize,3])
 
 tests = os.listdir(pathOld+'/test/')#["A-train0101.jpg","A-train0102.jpg","A-train0103.jpg","A-train0104.jpg","A-train0105.jpg"]
 noTestImages=len(tests)
-print "\n\t noTestImages=",noTestImages
+print ("\n\t noTestImages=",noTestImages)
 
 
 X_test = np.zeros((noTestImages,insize, insize,3))
 X_test1 =[] #np.zeros((noTestImages,512,512,3)) # original images
 testException=0
 
+contourTestPaths="/home/kapitsa/PycharmProjects/objectLocalization/DocumentTableSeg/DCEDN/publicationData/8/train/contourBlocksTest//"
+
 for pos in range(len(tests)):
     try:
 
         temp=cv2.imread(pathOld+'/test/'+tests[pos])
+        temp1=cv2.imread(contourTestPaths+tests[pos])
+
+
+        if unableContourMaps==1:
+            delMeTemp=temp1[:,:,0]
+
+            #print("\n\t shape=",delMeTemp.shape)
+
+            temp[:,:,1]=0.3*delMeTemp
+
+
         #print "\n\t test size",temp.shape
         #showImage(str(pos),temp)
 
@@ -201,7 +248,7 @@ for pos in range(len(tests)):
         # if 1:#bothBlackAndWhite==1:
         #     X_test1.append(255-temp)
     except Exception as e:
-        print "\n\t file name =",tests[pos]
+        print ("\n\t file name =",tests[pos])
         testException+=1
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -209,7 +256,7 @@ for pos in range(len(tests)):
 
 #X_test=X_test.reshape([-1,insize, insize,1])
 
-print "\n\t testException=",testException
+print("\n\t testException=",testException)
 
 X_train-=128.0
 X_train/=128.0
@@ -218,9 +265,9 @@ y_train/=128.0
 X_test-=128.0
 X_test/=128.0
 
-print "1.X_train shape=",X_train[0].shape
-print "2.y_train shape=",X_train.shape
-print "3.X_test shape=",X_test.shape
+print ("1.X_train shape=",X_train[0].shape)
+print ("2.y_train shape=",X_train.shape)
+print ("3.X_test shape=",X_test.shape)
 
 
 def createModel():
@@ -436,12 +483,15 @@ def createModel2(pretrained_weights=None, input_size=(256, 256, 1)):
     conv1 = Convolution2D(64, kernel_size=(3,3), activation='relu', padding='same', kernel_initializer='he_normal')(conv1)
     pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
     conv2 = Convolution2D(128, kernel_size=(3,3), activation='relu', padding='same', kernel_initializer='he_normal')(pool1)
+
     conv2 = Convolution2D(128, kernel_size=(3,3), activation='relu', padding='same', kernel_initializer='he_normal')(conv2)
     pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)
     conv3 = Convolution2D(256, kernel_size=(3,3), activation='relu', padding='same', kernel_initializer='he_normal')(pool2)
+
     conv3 = Convolution2D(256, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv3)
     pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
     conv4 = Convolution2D(512, kernel_size=(3,3), activation='relu', padding='same', kernel_initializer='he_normal')(pool3)
+
     conv4 = Convolution2D(512, kernel_size=(3,3), activation='relu', padding='same', kernel_initializer='he_normal')(conv4)
     drop4 = Dropout(0.5)(conv4)
     pool4 = MaxPooling2D(pool_size=(2, 2))(drop4)
@@ -504,11 +554,11 @@ def get_callbacks(filepath, patience):
     3) model weight path
 '''
 file_path = path+str(expN0)+"//model//paper_results_"+str(expN0)+"_"+str(dumpLen)+"_"+"_.hdf5"
-callbacks = get_callbacks(filepath=file_path, patience=20)
+callbacks = get_callbacks(filepath=file_path, patience=15)
 
-clf=createModel()
+clf=createModel2()
 #clf.compile(optimizer='adam',loss='mse',metrics=['mae'])
-print(clf.summary())
+#print(clf.summary())
 model_json=clf.to_json()
 
 '''
@@ -526,9 +576,13 @@ with open(path+str(expN0)+"//architecture//papermodelArch.json", "w") as json_fi
 
 #keras.callbacks.ModelCheckpoint(cwd+'//models//', monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1)
 
-clf.fit(X_train,y_train,batch_size=10, epochs=50,validation_split=0.2,callbacks=callbacks,shuffle=True,verbose=2)
-#clf.save(cwd+'//models//model-10.h5')
-clf.save(file_path)
+print("\n\t X_test1",len(X_test1))
+
+clf.fit(X_train,y_train,batch_size=10, epochs=1000,validation_split=0.2,callbacks=callbacks,shuffle=True,verbose=2)
+
+modelpath="/home/kapitsa/PycharmProjects/objectLocalization/DocumentTableSeg/model//"
+clf.save(modelpath+'///model-10.h5')
+#clf.save(file_path)
 
 sys.stdout.flush()
 y_out = clf.predict(X_test)
